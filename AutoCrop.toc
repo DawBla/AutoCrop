@@ -3,6 +3,6 @@
 ## Author: chromienk
 ## Notes: Equips Riding Crop and more
 ## SavedVariablesPerCharacter: AutoCropDB
-## Version: 2.0
+## Version: 1.6
 
 AutoCrop.lua
