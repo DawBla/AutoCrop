@@ -30,7 +30,7 @@ avaliableTrinketIDs = {11122, 25653, 32863}
 --goggle ids
 avaliableGogglesIDs = {34354, 35182, 34847, 34353, 34356, 35184, 34355, 35185, 35181, 35183, 32480, 32474, 32472, 32476, 32461, 32494, 32478, 32475, 32479, 34357, 32495, 32473, 23762}
 --fishing hat ids
-avaliableFishingHeadIDs = {33820, 19972}
+avaliableFishingHeadIDs = {28760, 33820, 19972}
 
 function AutoCropInArray(value, myArray)
   if myArray == nil then
@@ -40,6 +40,16 @@ function AutoCropInArray(value, myArray)
       if value == i then
           return true
       end
+  end
+  return false
+end
+
+function AutoCropFindBuff(spellName)
+  for i = 1,40 do
+    buff = UnitBuff("player", i)
+    if(buff == spellName) then
+      return true
+    end
   end
   return false
 end
@@ -114,7 +124,8 @@ function AutoCropEquipGoggles(zoneName)
   elseif(IsMounted() and not (zoneName == zones[1] or zoneName == zones[2] or zoneName == zones[3] or zoneName == zones[4])) then
     if(AutoCropDB.fishingEnabled and IsEquippedItemType("Fishing Pole")) then
       EquipItemByName(AutoCropDB.fishingHeadID, 1)
-    elseif(GetInventoryItemID("player", 1) ~= AutoCropDB.normalHeadID) then
+    elseif(GetInventoryItemID("player", 1) ~= AutoCropDB.normalHeadID and not AutoCropFindBuff("Longsight")) then
+      print(AutoCropFindBuff("Longsight"))
       EquipItemByName(AutoCropDB.normalHeadID, 1)
     end
   end
