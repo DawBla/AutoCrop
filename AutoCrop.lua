@@ -26,11 +26,17 @@ if not AutoCropDB then
 end
 
 --trinket ids
-avaliableTrinketIDs = {11122, 25653, 32863}
+avaliableTrinketIDs = {25653, 32863}
 --goggle ids
 avaliableGogglesIDs = {34354, 35182, 34847, 34353, 34356, 35184, 34355, 35185, 35181, 35183, 32480, 32474, 32472, 32476, 32461, 32494, 32478, 32475, 32479, 34357, 32495, 32473, 23762}
 --fishing hat ids
 avaliableFishingHeadIDs = {28760, 33820, 19972}
+
+--manual gear swap watchers
+headWatcher = false
+trinketWatcher = false
+feetAndHandsWatcher = false
+beltWatcher = false
 
 function AutoCropInArray(value, myArray)
   if myArray == nil then
@@ -54,36 +60,46 @@ function AutoCropFindBuff(spellName)
   return false
 end
 
+function AutoCropIsFlightForm()
+  local _, _, idx = UnitClass("player")
+  if idx == 11 then
+    local _, _, _, _, moonkin = GetTalentInfo(1, 18)
+    return GetShapeshiftForm() == 5 + moonkin
+  end
+end
+
 function AutoCropSaveNormalSet()
-  if(AutoCropDB.legacyEnabled) then
-    local trinketID = GetInventoryItemID("player", AutoCropDB.trinketSlot)
-    local bootsID = GetInventoryItemID("player", 8)
-    local glovesID = GetInventoryItemID("player", 10)
-    if(trinketID ~= AutoCropDB.ridingTrinketID) then
-      AutoCropDB.normalTrinketID = trinketID
+  if(AutoCropDB.autocropEnabled) then
+    if(AutoCropDB.legacyEnabled) then
+      local trinketID = GetInventoryItemID("player", AutoCropDB.trinketSlot)
+      local bootsID = GetInventoryItemID("player", 8)
+      local glovesID = GetInventoryItemID("player", 10)
+      if(trinketID ~= AutoCropDB.ridingTrinketID) then
+        AutoCropDB.normalTrinketID = trinketID
+      end
+      if(bootsID ~= AutoCropDB.ridingBootsID) then
+        AutoCropDB.normalBootsID = bootsID
+      end
+      if(glovesID ~= AutoCropDB.ridingGlovesID) then
+        AutoCropDB.normalGlovesID = glovesID
+      end
+    else
+      local trinketID = GetInventoryItemID("player", AutoCropDB.trinketSlot)
+      if(trinketID ~= AutoCropDB.ridingTrinketID) then
+        AutoCropDB.normalTrinketID = trinketID
+      end
     end
-    if(bootsID ~= AutoCropDB.ridingBootsID) then
-      AutoCropDB.normalBootsID = bootsID
+    if(AutoCropDB.fishingEnabled or AutoCropDB.gogglesEnabled) then
+      local headID = GetInventoryItemID("player", 1)
+      if(headID ~= AutoCropDB.gogglesID and headID ~= AutoCropDB.fishingHeadID) then
+        AutoCropDB.normalHeadID = headID
+      end
     end
-    if(glovesID ~= AutoCropDB.ridingGlovesID) then
-      AutoCropDB.normalGlovesID = glovesID
-    end
-  else
-    local trinketID = GetInventoryItemID("player", AutoCropDB.trinketSlot)
-    if(trinketID ~= AutoCropDB.ridingTrinketID) then
-      AutoCropDB.normalTrinketID = trinketID
-    end
-  end
-  if(AutoCropDB.fishingEnabled or AutoCropDB.gogglesEnabled) then
-    local headID = GetInventoryItemID("player", 1)
-    if(headID ~= AutoCropDB.gogglesID and headID ~= AutoCropDB.fishingHeadID) then
-      AutoCropDB.normalHeadID = headID
-    end
-  end
-  if(AutoCropDB.swimmingEnabled) then
-    local beltID = GetInventoryItemID("player", 6)
-    if(beltID ~= AutoCropDB.swimmingBeltID) then
-      AutoCropDB.normalBeltID = beltID
+    if(AutoCropDB.swimmingEnabled) then
+      local beltID = GetInventoryItemID("player", 6)
+      if(beltID ~= AutoCropDB.swimmingBeltID) then
+        AutoCropDB.normalBeltID = beltID
+      end
     end
   end
 end
@@ -91,7 +107,7 @@ end
 function AutoCropEquipNormalSet()
   if(InCombatLockdown() or UnitIsDeadOrGhost("player")) then 
     return 
-  else
+  elseif(AutoCropDB.autocropEnabled) then
     EquipItemByName(AutoCropDB.normalTrinketID, AutoCropDB.trinketSlot)
     if(AutoCropDB.gogglesEnabled or AutoCropDB.fishingEnabled) then
       EquipItemByName(AutoCropDB.normalHeadID, 1)
@@ -108,25 +124,40 @@ function AutoCropEquipNormalSet()
 end
 
 function AutoCropEquipRidingSet()
-  if(AutoCropDB.legacyEnabled) then
-    EquipItemByName(11122, AutoCropDB.trinketSlot)
-    EquipItemByName(AutoCropDB.ridingBootsID, 8)
-    EquipItemByName(AutoCropDB.ridingGlovesID, 10)
-  else
-    EquipItemByName(AutoCropDB.ridingTrinketID, AutoCropDB.trinketSlot)
+  if(InCombatLockdown() or UnitIsDeadOrGhost("player")) then 
+    return 
   end
-  ridingGearEquipped = true
+  local inInstance, instanceType = IsInInstance()
+  if(inInstance and not(instanceType == "pvp" and AutoCropDB.pvpEnabled)) then
+    return
+  end
+  if(AutoCropDB.autocropEnabled) then
+    if(AutoCropDB.legacyEnabled) then
+      EquipItemByName(11122, AutoCropDB.trinketSlot)
+      EquipItemByName(AutoCropDB.ridingBootsID, 8)
+      EquipItemByName(AutoCropDB.ridingGlovesID, 10)
+    else
+      if(AutoCropIsFlightForm()) then
+        EquipItemByName(32481, AutoCropDB.trinketSlot)
+      else
+        EquipItemByName(AutoCropDB.ridingTrinketID, AutoCropDB.trinketSlot)
+      end
+    end
+    ridingGearEquipped = true
+  end
 end
 
 function AutoCropEquipGoggles(zoneName)
-  if(IsMounted() and (zoneName == zones[1] or zoneName == zones[2] or zoneName == zones[3] or zoneName == zones[4])) then
-    EquipItemByName(AutoCropDB.gogglesID, 1)
-  elseif(IsMounted() and not (zoneName == zones[1] or zoneName == zones[2] or zoneName == zones[3] or zoneName == zones[4])) then
-    if(AutoCropDB.fishingEnabled and IsEquippedItemType("Fishing Pole")) then
-      EquipItemByName(AutoCropDB.fishingHeadID, 1)
-    elseif(GetInventoryItemID("player", 1) ~= AutoCropDB.normalHeadID and not AutoCropFindBuff("Longsight")) then
-      print(AutoCropFindBuff("Longsight"))
-      EquipItemByName(AutoCropDB.normalHeadID, 1)
+  if(AutoCropDB.autocropEnabled and AutoCropDB.gogglesEnabled) then
+    if(IsMounted() and (zoneName == zones[1] or zoneName == zones[2] or zoneName == zones[3] or zoneName == zones[4])) then
+      EquipItemByName(AutoCropDB.gogglesID, 1)
+    elseif(IsMounted() and not (zoneName == zones[1] or zoneName == zones[2] or zoneName == zones[3] or zoneName == zones[4])) then
+      if(AutoCropDB.fishingEnabled and IsEquippedItemType("Fishing Pole")) then
+        EquipItemByName(AutoCropDB.fishingHeadID, 1)
+      elseif(GetInventoryItemID("player", 1) ~= AutoCropDB.normalHeadID and not AutoCropFindBuff("Longsight")) then
+        print(AutoCropFindBuff("Longsight"))
+        EquipItemByName(AutoCropDB.normalHeadID, 1)
+      end
     end
   end
 end
@@ -219,6 +250,7 @@ local f = CreateFrame("Frame")
   f:RegisterEvent('PLAYER_REGEN_DISABLED')
   f:RegisterEvent('PLAYER_REGEN_ENABLED')
   f:RegisterEvent('PLAYER_ENTERING_WORLD')
+  f:RegisterEvent('UPDATE_SHAPESHIFT_FORM')
 
 --on addon load
 f:SetScript('OnEvent', function(self, event, ...)
@@ -253,8 +285,8 @@ f:SetScript('OnEvent', function(self, event, ...)
     AutoCropEquipFishingHead()
   end
   
-  if(event == "PLAYER_MOUNT_DISPLAY_CHANGED") then
-    if(IsMounted() and not UnitOnTaxi("player") and (C_SummonInfo.GetSummonConfirmTimeLeft() == 0) and (not inInstance or (instanceType == "pvp" and AutoCropDB.pvp))) then
+  if(event == "PLAYER_MOUNT_DISPLAY_CHANGED" or event == "UPDATE_SHAPESHIFT_FORM") then
+    if(IsMounted() and not UnitOnTaxi("player") and (C_SummonInfo.GetSummonConfirmTimeLeft() == 0)) then
       AutoCropSaveNormalSet()
       AutoCropEquipRidingSet()
       AutoCropEquipGoggles(GetRealZoneText())
@@ -270,7 +302,7 @@ f:SetScript('OnEvent', function(self, event, ...)
   
   if(event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then
     local inInstance, instanceType = IsInInstance()
-    if(not IsMounted() and (inInstance and not(instanceType == "pvp" and AutoCropDB.pvpEnabled))) then
+    if(inInstance and not(instanceType == "pvp" and AutoCropDB.pvpEnabled)) then
       AutoCropEquipNormalSet()
     end
   end
