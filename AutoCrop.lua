@@ -263,7 +263,7 @@ f:SetScript("OnUpdate", function()
 end)
 
 --on addon load
-f:SetScript('OnEvent', function(self, event, arg1, arg2, arg3, arg4, ...)
+f:SetScript('OnEvent', function(self, event, ...)
     
   --initialization
   if(event == "ADDON_LOADED") then
