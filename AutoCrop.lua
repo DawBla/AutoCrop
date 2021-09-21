@@ -148,8 +148,9 @@ function AutoCropEquipRidingSet()
       EquipItemByName(AutoCropDB.ridingBootsID, 8)
       EquipItemByName(AutoCropDB.ridingGlovesID, 10)
     else
-      if(AutoCropIsFlightForm()) then
+      if(AutoCropIsFlightForm() and isDruid) then
         EquipItemByName(32481, AutoCropDB.trinketSlot)
+        isFlying = true
       else
         EquipItemByName(AutoCropDB.ridingTrinketID, AutoCropDB.trinketSlot)
       end
@@ -245,7 +246,7 @@ f:SetScript("OnUpdate", function()
     return 
   end
   local inInstance, instanceType = IsInInstance()
-  if(AutoCropDB.autocropEnabled and isFlying and not AutoCropIsFlightForm() and not inInstance) then
+  if(AutoCropDB.autocropEnabled and isDruid and isFlying and not AutoCropIsFlightForm() and not inInstance) then
     EquipItemByName(AutoCropDB.normalTrinketID, AutoCropDB.trinketSlot)
     isFlying = false
   end
@@ -301,7 +302,6 @@ f:SetScript('OnEvent', function(self, event, ...)
       AutoCropSaveNormalSet()
       AutoCropEquipRidingSet()
       AutoCropEquipGoggles(GetRealZoneText())
-      isFlying = true
     else
       AutoCropEquipNormalSet()
       AutoCropEquipGoggles(GetRealZoneText())
