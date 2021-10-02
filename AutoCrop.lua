@@ -70,7 +70,8 @@ function AutoCropIsFlightForm()
   local _, _, idx = UnitClass("player")
   if idx == 11 then
     local _, _, _, _, moonkin = GetTalentInfo(1, 18)
-    return GetShapeshiftForm() == 5 + moonkin
+    local _, _, _, _, tree = GetTalentInfo(3, 20)
+    return GetShapeshiftForm() == 5 + moonkin + tree
   end
 end
 
