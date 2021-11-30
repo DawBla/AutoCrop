@@ -69,9 +69,8 @@ end
 function AutoCropIsFlightForm()
   local _, _, idx = UnitClass("player")
   if idx == 11 then
-    local _, _, _, _, moonkin = GetTalentInfo(1, 18)
-    local _, _, _, _, tree = GetTalentInfo(3, 20)
-    return GetShapeshiftForm() == 5 + moonkin + tree
+    local formId = GetShapeshiftFormID()
+    return formId == 29 or formId == 27
   end
 end
 
@@ -81,7 +80,7 @@ function AutoCropSaveNormalSet()
       local trinketID = GetInventoryItemID("player", AutoCropDB.trinketSlot)
       local bootsID = GetInventoryItemID("player", 8)
       local glovesID = GetInventoryItemID("player", 10)
-      if(trinketID ~= AutoCropDB.ridingTrinketID) then
+      if(trinketID ~= 11122) then
         AutoCropDB.normalTrinketID = trinketID
       end
       if(bootsID ~= AutoCropDB.ridingBootsID) then
@@ -122,9 +121,11 @@ function AutoCropEquipNormalSet()
     if(AutoCropDB.legacyEnabled) then
       local bootsID = GetInventoryItemID("player", 8)
       local glovesID = GetInventoryItemID("player", 10)
+      EquipItemByName(AutoCropDB.normalTrinketID, AutoCropDB.trinketSlot)
       if(bootsID == AutoCropDB.ridingBootsID) then
         EquipItemByName(AutoCropDB.normalBootsID, 8)
-      elseif(glovesID == AutoCropDB.ridingGlovesID) then
+      end
+      if(glovesID == AutoCropDB.ridingGlovesID) then
         EquipItemByName(AutoCropDB.normalGlovesID, 10)
       end
     end
@@ -162,7 +163,7 @@ end
 
 function AutoCropEquipGoggles(zoneName)
   if(AutoCropDB.autocropEnabled and AutoCropDB.gogglesEnabled) then
-    if(IsMounted() and (zoneName == zones[1] or zoneName == zones[2] or zoneName == zones[3] or zoneName == zones[4])) then
+    if((IsMounted() or AutoCropIsFlightForm()) and (zoneName == zones[1] or zoneName == zones[2] or zoneName == zones[3] or zoneName == zones[4])) then
       EquipItemByName(AutoCropDB.gogglesID, 1)
     elseif(IsMounted() and not (zoneName == zones[1] or zoneName == zones[2] or zoneName == zones[3] or zoneName == zones[4])) then
       EquipItemByName(AutoCropDB.normalHeadID, 1)
@@ -177,7 +178,7 @@ function AutoCropSearchInventory()
       if(link) then
         local itemID, enchantID = link:match("item:(%d+):(%d+)")
         itemID = GetContainerItemID(bag, slot)
-        if(legacyEnabled) then
+        if(AutoCropDB.legacyEnabled) then
           if(enchantID == "930") then
             AutoCropDB.ridingGlovesID = itemID
           elseif(enchantID == "464") then
@@ -514,9 +515,9 @@ AutoCropButton:SetScript("OnDragStart", function() if IsAltKeyDown() then AutoCr
 AutoCropButton:SetScript("OnDragStop", AutoCropButton.StopMovingOrSizing)
 AutoCropButton:SetScript("OnClick", function()
   if AutoCropDB.autocropEnabled then
+    AutoCropEquipNormalSet()
     AutoCropButton.overlay:SetColorTexture(1, 0, 0, 0.5)
     AutoCropDB.autocropEnabled = false
-    AutoCropEquipNormalSet()
   else
     AutoCropButton.overlay:SetColorTexture(0, 1, 0, 0.3)
     AutoCropDB.autocropEnabled = true
